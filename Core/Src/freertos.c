@@ -58,21 +58,14 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t Arm_ControlHandle;
 const osThreadAttr_t Arm_Control_attributes = {
   .name = "Arm_Control",
-  .stack_size = 128 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for Communicate */
 osThreadId_t CommunicateHandle;
 const osThreadAttr_t Communicate_attributes = {
   .name = "Communicate",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for CANopen_task */
-osThreadId_t CANopen_taskHandle;
-const osThreadAttr_t CANopen_task_attributes = {
-  .name = "CANopen_task",
-  .stack_size = 128 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for usart1RxQueue */
@@ -89,7 +82,6 @@ const osMessageQueueAttr_t usart1RxQueue_attributes = {
 void StartDefaultTask(void *argument);
 void arm_control(void *argument);
 void communicate(void *argument);
-void CANopen(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -132,9 +124,6 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Communicate */
   CommunicateHandle = osThreadNew(communicate, NULL, &Communicate_attributes);
-
-  /* creation of CANopen_task */
-  CANopen_taskHandle = osThreadNew(CANopen, NULL, &CANopen_task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -198,24 +187,6 @@ __weak void communicate(void *argument)
     osDelay(1);
   }
   /* USER CODE END communicate */
-}
-
-/* USER CODE BEGIN Header_CANopen */
-/**
-* @brief Function implementing the CANopen_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_CANopen */
-__weak void CANopen(void *argument)
-{
-  /* USER CODE BEGIN CANopen */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END CANopen */
 }
 
 /* Private application code --------------------------------------------------*/

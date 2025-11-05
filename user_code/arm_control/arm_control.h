@@ -132,6 +132,17 @@ void collect_joint_angles();                               //收集所有关节�
 void joint_angle_to_linear();                               //关节角度转直线电机长度
 void set_all_motor();                                   //根据关节角度设置所有电机目标角度和长度
 void set_all_motor_pos();                                //根据电机目标角度长度设置所有电机编码器位置
+void canopen_init();                                      // 电机CANopen初始化
+void canopen_init_taihu(uint8_t node_id);                     // 钛虎电机CANopen初始化
+void canopen_init_hechuan(uint8_t node_id);                   // 禾川电机CANopen初始化
+
+CO_SDO_abortCode_t write_SDO(CO_SDOclient_t *SDO_C, uint8_t nodeId,
+                             uint16_t index, uint8_t subIndex,
+                             uint8_t *data, size_t dataSize); // SDO写入函数
+CO_SDO_abortCode_t read_SDO(CO_SDOclient_t *SDO_C, uint8_t nodeId,
+                            uint16_t index, uint8_t subIndex,
+                            uint8_t *buf, size_t bufSize, size_t *readSize); // SDO读取函数
+
 
 
 
