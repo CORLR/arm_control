@@ -42,6 +42,7 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 #define RX_BUFFER_SIZE 256  // 定义最大接收缓冲区大小
+extern uint8_t g_usart1_rx_buffer[RX_BUFFER_SIZE]; // 声明全局接收缓冲区
 // 定义"消息包"结构体
 // 这就是我们将要在队列中传递的数据
 typedef struct {

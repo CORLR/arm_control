@@ -3802,7 +3802,7 @@ static void UART_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
     huart->RxEventCallback(huart, huart->RxXferSize / 2U);
 #else
     /*Call legacy weak Rx Event callback*/
-    HAL_UARTEx_RxEventCallback(huart, huart->RxXferSize / 2U);
+    // HAL_UARTEx_RxEventCallback(huart, huart->RxXferSize / 2U);
 #endif /* USE_HAL_UART_REGISTER_CALLBACKS */
   }
   else

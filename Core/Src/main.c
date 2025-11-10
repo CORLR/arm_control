@@ -28,6 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "CO_app_stm32.h"
+#include "arm_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +51,7 @@
 /* USER CODE BEGIN PV */
 // 1. DMA 目标缓冲区 (DMA 直接写入这里)
 // (H7 警告: 必须处理 Cache，或者将其放入非 Cache 区)
-uint8_t g_usart1_rx_buffer[RX_BUFFER_SIZE];
+uint8_t g_usart1_rx_buffer[RX_BUFFER_SIZE] __attribute__((section(".DTCMRAM")));
 
 // 2. 队列句柄 (CubeMX 会自动定义)
 extern osMessageQueueId_t usart1RxQueueHandle;
@@ -65,7 +66,9 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+HAL_StatusTypeDef can_flag;
+uint8_t uart_flag;
+uint8_t error_flag;
 /* USER CODE END 0 */
 
 /**
@@ -82,10 +85,10 @@ int main(void)
   /* Enable the CPU Cache */
 
   /* Enable I-Cache---------------------------------------------------------*/
-  SCB_EnableICache();
+  // SCB_EnableICache();
 
   /* Enable D-Cache---------------------------------------------------------*/
-  SCB_EnableDCache();
+  // SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -106,12 +109,12 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_FDCAN2_Init();
+  // MX_FDCAN2_Init();
   MX_TIM17_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   // **关键：在启动调度器前，必须启动第一次 DMA 接收**
-  if(HAL_UARTEx_ReceiveToIdle_DMA(&huart1, g_usart1_rx_buffer, RX_BUFFER_SIZE) != HAL_OK)
+  if(HAL_UART_Receive_IT(&huart1, g_usart1_rx_buffer, RX_BUFFER_SIZE) != HAL_OK)
   {
       Error_Handler();
   }
@@ -201,32 +204,41 @@ void SystemClock_Config(void)
   * @brief  Rx Event Callback. (IDLE 或 DMA 满 触发)
   * @note   **这是在中断上下文中执行的 (ISR) - 必须极快！**
   */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART1)
     {
+      uart_flag++;
         // 静态消息包，避免在 ISR 中使用堆栈 (ISR-Safe)
-        static RxDataChunk_t s_rx_chunk;
+        static RxDataChunk_t s_rx_chunk __attribute__((section(".DTCMRAM")));
 
         // **步骤 A：(H7 核心) 刷新 D-Cache**
         // 告诉 CPU，DMA 已经改了 RAM，你 Cache 里的数据作废了
-        SCB_InvalidateDCache_by_Addr((uint32_t*)g_usart1_rx_buffer, Size);
+        // SCB_InvalidateDCache_by_Addr((uint32_t*)g_usart1_rx_buffer, Size);
 
         // **步骤 B：将数据复制到消息包中**
-        uint16_t copy_size = (Size < RX_BUFFER_SIZE) ? Size : RX_BUFFER_SIZE;
+        uint16_t copy_size = RX_BUFFER_SIZE;
         memcpy(s_rx_chunk.buffer, g_usart1_rx_buffer, copy_size);
         s_rx_chunk.len = copy_size;
-        
+        // SCB_CleanDCache_by_Addr((uint32_t*)s_rx_chunk.buffer, copy_size);
         // **步骤 C：将消息包发送到队列 (从中断发送)**
         // 最后一个参数 0 表示不等待 (在 ISR 中必须为 0)
         osMessageQueuePut(usart1RxQueueHandle, &s_rx_chunk, 0, 0);
         // (如果队列满了，osMessageQueuePut 会失败，数据自动被丢弃，符合您“实时性不高”的预期)
-        
-        // **步骤 D：重新启动 DMA 接收**
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart1, g_usart1_rx_buffer, RX_BUFFER_SIZE);
+
+        HAL_UART_Receive_IT(&huart1, g_usart1_rx_buffer, RX_BUFFER_SIZE);
     }
 }
-
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  if(huart->Instance == USART1)
+  {
+    error_flag++;
+    HAL_UART_AbortReceive(huart);
+    // 重新启动 DMA 接收
+    HAL_UART_Receive_IT(&huart1, g_usart1_rx_buffer, RX_BUFFER_SIZE);
+  }
+}
 /* USER CODE END 4 */
 
 /**

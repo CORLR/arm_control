@@ -31,6 +31,7 @@
         "arm_control.h": "c",
         "cmsis_os2.h": "c",
         "protocol.h": "c",
-        "canopen.h": "c"
+        "canopen.h": "c",
+        "string_view": "c"
     }
 }

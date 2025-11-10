@@ -130,6 +130,13 @@ void process_encoder_data(uint8_t* pData, uint32_t len)
     set_joint_angle[6] = 0.0f;
     // set_joint_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_7;
     set_joint_angle[7] = 0.0f; //7号编码器出错不发数据
+    // set_joint_angle[1] = 0.0f;
+    // set_joint_angle[2] = 0.0f;
+    // set_joint_angle[3] = 0.0f;
+    // set_joint_angle[4] = 0.0f;
+    // set_joint_angle[5] = 0.0f;
+    // set_joint_angle[6] = 0.0f;
+    // set_joint_angle[7] = 0.0f;
     for(int i = 1; i <= 7; i++)
     {
         if(set_joint_angle[i] > PI) set_joint_angle[i] -= 2 * PI;
