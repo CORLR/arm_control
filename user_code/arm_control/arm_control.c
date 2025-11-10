@@ -6,6 +6,7 @@
 #include "stdint.h"
 #include "cmsis_os2.h"
 #include "main.h"
+#include "math.h"
 
 
 int16_t dianliu_kp[4] = {0}; 
@@ -74,7 +75,6 @@ void arm_control(void)
         joint_angle[i] = 0;
     }
 
-
     while (1)
     {
         
@@ -117,8 +117,8 @@ void hechuan_motor_setpos(uint8_t node_id, int32_t target)
     write_SDO(CO->SDOclient, node_id, 0x6081, 0x00, g_ucTempBuf, 3); //800000
     if(node_id == 3)
     {
-        if (target > 100000) target = 100000;
-        if (target < -3500000) target = -3500000;
+        if (target > 10000) target = 10000;
+        if (target < -3000000) target = -3000000;
     }
     else 
     {
@@ -367,13 +367,13 @@ void set_all_motor_pos()
     set_pos[5] = taihu_angle_to_pos(CANopenSlaveID4, set_motor[5]);
     set_pos[6] = taihu_angle_to_pos(CANopenSlaveID4, set_motor[6]);
     set_pos[7] = taihu_angle_to_pos(CANopenSlaveID4, set_motor[7]);
-    // hechuan_motor_setpos(CANopenSlaveID1, hechuan_length_to_pos(set_motor[1]));
-    // hechuan_motor_setpos(CANopenSlaveID2, hechuan_length_to_pos(set_motor[2]));
+    hechuan_motor_setpos(CANopenSlaveID1, hechuan_length_to_pos(set_motor[1]));
+    hechuan_motor_setpos(CANopenSlaveID2, hechuan_length_to_pos(set_motor[2]));
     hechuan_motor_setpos(CANopenSlaveID3, hechuan_length_to_pos(set_motor[3]));
-    // taihu_motor_setpos(CANopenSlaveID4, taihu_angle_to_pos(CANopenSlaveID4, set_motor[4]));
-    // taihu_motor_setpos(CANopenSlaveID5, taihu_angle_to_pos(CANopenSlaveID5, set_motor[5]));
-    // taihu_motor_setpos(CANopenSlaveID6, taihu_angle_to_pos(CANopenSlaveID6, set_motor[6]));
-    // taihu_motor_setpos(CANopenSlaveID7, taihu_angle_to_pos(CANopenSlaveID7, set_motor[7]));
+    taihu_motor_setpos(CANopenSlaveID4, taihu_angle_to_pos(CANopenSlaveID4, set_motor[4]));
+    taihu_motor_setpos(CANopenSlaveID5, taihu_angle_to_pos(CANopenSlaveID5, set_motor[5]));
+    taihu_motor_setpos(CANopenSlaveID6, taihu_angle_to_pos(CANopenSlaveID6, set_motor[6]));
+    taihu_motor_setpos(CANopenSlaveID7, taihu_angle_to_pos(CANopenSlaveID7, set_motor[7]));
 }
 
 
@@ -415,8 +415,8 @@ void callback_error(const uint16_t ident, const uint16_t errorCode, const uint8_
  */
 void canopen_init()
 {
-    // canopen_init_hechuan(CANopenSlaveID1);
-    // canopen_init_hechuan(CANopenSlaveID2);
+    canopen_init_hechuan(CANopenSlaveID1);
+    canopen_init_hechuan(CANopenSlaveID2);
     canopen_init_hechuan(CANopenSlaveID3);
     canopen_init_taihu(CANopenSlaveID4);
     canopen_init_taihu(CANopenSlaveID5);

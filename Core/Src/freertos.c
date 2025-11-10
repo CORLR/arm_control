@@ -59,7 +59,7 @@ osThreadId_t Arm_ControlHandle;
 const osThreadAttr_t Arm_Control_attributes = {
   .name = "Arm_Control",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for Communicate */
 osThreadId_t CommunicateHandle;
