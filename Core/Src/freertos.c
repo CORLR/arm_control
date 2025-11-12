@@ -40,7 +40,10 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+osMutexId_t setJointAngleMutexHandle;
+const osMutexAttr_t setJointAngleMutex_attributes = {
+  .name = "setJointAngleMutex"
+};
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -97,6 +100,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
+  setJointAngleMutexHandle = osMutexNew(&setJointAngleMutex_attributes);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */

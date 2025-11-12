@@ -11,8 +11,8 @@
 // 帧头
 #define FRAME_HEADER 0x55 
 
-// 功能码 (目前固定为 0x01)
-#define FUNCTION_CODE 0x01
+// 功能码
+#define FUNCTION_CODE 0x02
 
 // 数据长度 (7 个编码器 * 2 字节/编码器)
 #define FRAME_DATA_LENGTH 14 
@@ -118,28 +118,27 @@ void process_encoder_data(uint8_t* pData, uint32_t len)
         return; 
     }
 
-    
-    // set_joint_angle[1] = -((float)((pData[0] << 8 | pData[1]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_1);
-
-    // set_joint_angle[2] = (float)((pData[2] << 8 | pData[3]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_2;
-    // // set_joint_angle[3] = (float)((pData[4] << 8 | pData[5]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_3;
-    // set_joint_angle[3] = 0.0f; //3号编码器出错不发数据
-    // set_joint_angle[4] = (float)((pData[6] << 8 | pData[7]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_4;
-    // set_joint_angle[5] = -((float)((pData[8] << 8 | pData[9]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_5);
-    // // set_joint_angle[6] = -((float)((pData[10] << 8 | pData[11]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_6);
-    // set_joint_angle[6] = 0.0f;
-    // // set_joint_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_7;
-    // set_joint_angle[7] = 0.0f; //7号编码器出错不发数据
-    set_joint_angle[1] = 0.0f;
-    set_joint_angle[2] = 0.0f;
-    set_joint_angle[3] = 0.2f;
-    set_joint_angle[4] = 0.0f;
-    set_joint_angle[5] = 0.0f;
-    set_joint_angle[6] = 0.0f;
-    set_joint_angle[7] = 0.0f;
-    for(int i = 1; i <= 7; i++)
+    if(osMutexAcquire(setJointAngleMutexHandle, 0) == osOK)
     {
-        // if(set_joint_angle[i] > PI) set_joint_angle[i] -= 2 * PI;
-        // if(set_joint_angle[i] < -PI) set_joint_angle[i] += 2 * PI;
+        set_joint_angle[1] = (float)((pData[0] << 8 | pData[1]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_1;
+        set_joint_angle[2] = -((float)((pData[2] << 8 | pData[3]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_2);
+        set_joint_angle[3] = (float)((pData[4] << 8 | pData[5]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_3;
+        set_joint_angle[4] = -((float)((pData[6] << 8 | pData[7]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_4);
+        set_joint_angle[5] = (float)((pData[8] << 8 | pData[9]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_5;
+        set_joint_angle[6] = (float)((pData[10] << 8 | pData[11]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_6;
+        set_joint_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_7;
+        // set_joint_angle[1] = 0.0f;
+        // set_joint_angle[2] = 0.0f;
+        // set_joint_angle[3] = 0.0f;
+        // set_joint_angle[4] = 0.0f;
+        // set_joint_angle[5] = 0.0f;
+        // set_joint_angle[6] = 0.0f;
+        // set_joint_angle[7] = 0.0f;
+        for(int i = 1; i <= 7; i++)
+        {
+            if(set_joint_angle[i] > PI) set_joint_angle[i] -= 2 * PI;
+            if(set_joint_angle[i] < -PI) set_joint_angle[i] += 2 * PI;
+        }
+        osMutexRelease(setJointAngleMutexHandle);
     }
 }

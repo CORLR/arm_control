@@ -42,16 +42,16 @@ int32_t xianwei;
 
 uint32_t flag;
 
-uint8_t data_error[64];  // 存放错误信息并通过串口上报的缓冲区
-uint8_t data_jiaodu[64]; // 存放电机角度数据并通过串口上报的缓冲区
-uint8_t read = 0;              // 串口接收的当前字节
-uint8_t ucStatus = 0;          // 串口协议解析状态机当前状态
-uint8_t len = 0;               // 当前接收数据包的长度
-uint8_t ucCount = 0;           // 当前已接收数据字节计数
-uint8_t motor_init = 0;       // 电机初始化完成标志
+uint8_t data_error[64];         // 存放错误信息并通过串口上报的缓冲区
+uint8_t data_jiaodu[64];        // 存放电机角度数据并通过串口上报的缓冲区
+uint8_t read = 0;               // 串口接收的当前字节
+uint8_t ucStatus = 0;           // 串口协议解析状态机当前状态
+uint8_t len = 0;                // 当前接收数据包的长度
+uint8_t ucCount = 0;            // 当前已接收数据字节计数
+uint8_t motor_init = 0;         // 电机初始化完成标志
 
-CANopenNodeSTM32 canOpenNodeSTM32;
-uint8_t canopen_init_flag = 0;         // CANopen初始化完成标志
+CANopenNodeSTM32 canOpenNodeSTM32;      
+uint8_t canopen_init_flag = 0;          // CANopen初始化完成标志
 
 
 
@@ -351,11 +351,15 @@ void joint_angle_to_linear()
 
 void set_all_motor()
 {
-    joint_angle_to_linear();
-    set_motor[4] = set_joint_angle[1];
-    set_motor[5] = set_joint_angle[2];
-    set_motor[6] = set_joint_angle[3];
-    set_motor[7] = set_joint_angle[5];
+    if(osMutexAcquire(setJointAngleMutexHandle, 0) == osOK)
+    {
+        joint_angle_to_linear();
+        set_motor[4] = set_joint_angle[2];
+        set_motor[5] = set_joint_angle[1];
+        set_motor[6] = set_joint_angle[3];
+        set_motor[7] = set_joint_angle[5];
+        osMutexRelease(setJointAngleMutexHandle);
+    }
 }
 
 void set_all_motor_pos()

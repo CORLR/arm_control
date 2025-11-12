@@ -4,6 +4,7 @@
 #include "CO_app_STM32.h"
 #include "fdcan.h"
 #include "stdint.h"
+#include "cmsis_os.h"
 
 /*
 *********************************************************************************************************
@@ -57,13 +58,13 @@
 
 #define PI               3.14159265358979f
 
-#define ANGLE_ERROR_1 -2.2814
-#define ANGLE_ERROR_2 -0.0993
-#define ANGLE_ERROR_3 0
-#define ANGLE_ERROR_4 2.3830
-#define ANGLE_ERROR_5 -1.1075
-#define ANGLE_ERROR_6 -1.7713
-#define ANGLE_ERROR_7 -2.2246
+#define ANGLE_ERROR_1 2.22f
+#define ANGLE_ERROR_2 1.65f
+#define ANGLE_ERROR_3 0.632f
+#define ANGLE_ERROR_4 0.64f
+#define ANGLE_ERROR_5 2.87f
+#define ANGLE_ERROR_6 -2.22f
+#define ANGLE_ERROR_7 -0.35f
 
 #define SPEED 5000
 #define ACCELERATED 1000
@@ -73,6 +74,8 @@
 *	                                            变量
 *********************************************************************************************************
 */
+extern osMutexId_t setJointAngleMutexHandle;//互斥锁
+
 
 extern int16_t dianliu_kp[4]; 
 extern int16_t dianliu_ki[4];
