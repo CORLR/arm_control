@@ -58,8 +58,8 @@
 
 #define PI               3.14159265358979f
 
-#define ANGLE_ERROR_1 2.22f
-#define ANGLE_ERROR_2 1.65f
+#define ANGLE_ERROR_1 1.65f
+#define ANGLE_ERROR_2 2.22f
 #define ANGLE_ERROR_3 0.632f
 #define ANGLE_ERROR_4 0.64f
 #define ANGLE_ERROR_5 2.87f

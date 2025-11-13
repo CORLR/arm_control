@@ -7,7 +7,7 @@
 #define CONTROL_MODE_ABSOLUTE 0// 绝对控制模式
 #define CONTROL_MODE_RELATIVE 1// 相对控制模式
 
-#define CURRENT_CONTROL_MODE CONTROL_MODE_ABSOLUTE // 当前控制模式
+#define CURRENT_CONTROL_MODE CONTROL_MODE_RELATIVE // 当前控制模式
 
 // 帧头
 #define FRAME_HEADER 0x55 
@@ -124,91 +124,89 @@ void process_encoder_data(uint8_t* pData, uint32_t len)
         return; 
     }
 
+    #if (CURRENT_CONTROL_MODE == CONTROL_MODE_ABSOLUTE)
+
+    /************************************************/
+    /* 模式 0: 绝对位置控制                            */
+    /************************************************/
+
     if(osMutexAcquire(setJointAngleMutexHandle, 0) == osOK)
     {
-        #if (CURRENT_CONTROL_MODE == CONTROL_MODE_ABSOLUTE)
-
-        /************************************************/
-        /* 模式 0: 绝对位置控制                            */
-        /************************************************/
-    
-        if(osMutexAcquire(setJointAngleMutexHandle, 0) == osOK)
-        {
-            set_joint_angle[1] = (float)((pData[0] << 8 | pData[1]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_1;
-            set_joint_angle[2] = -((float)((pData[2] << 8 | pData[3]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_2);
-            set_joint_angle[3] = (float)((pData[4] << 8 | pData[5]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_3;
-            set_joint_angle[4] = -((float)((pData[6] << 8 | pData[7]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_4);
-            set_joint_angle[5] = (float)((pData[8] << 8 | pData[9]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_5;
-            set_joint_angle[6] = (float)((pData[10] << 8 | pData[11]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_6;
-            set_joint_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_7;
-            
-            for(int i = 1; i <= 7; i++)
-            {
-                if(set_joint_angle[i] > PI) set_joint_angle[i] -= 2 * PI;
-                if(set_joint_angle[i] < -PI) set_joint_angle[i] += 2 * PI;
-            }
-            osMutexRelease(setJointAngleMutexHandle);
-        }
-
-        #elif (CURRENT_CONTROL_MODE == CONTROL_MODE_RELATIVE)
-
-        /************************************************/
-        /* 模式 1: 相对位置控制                            */
-        /************************************************/
-        
-        float current_host_angle[8];
-
-        current_host_angle[1] = (float)((pData[0] << 8 | pData[1]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_1;
-        current_host_angle[2] = -((float)((pData[2] << 8 | pData[3]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_2);
-        current_host_angle[3] = (float)((pData[4] << 8 | pData[5]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_3;
-        current_host_angle[4] = -((float)((pData[6] << 8 | pData[7]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_4);
-        current_host_angle[5] = (float)((pData[8] << 8 | pData[9]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_5;
-        current_host_angle[6] = (float)((pData[10] << 8 | pData[11]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_6;
-        current_host_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_7;
-
+        set_joint_angle[1] = -((float)((pData[0] << 8 | pData[1]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_1);
+        set_joint_angle[2] = (float)((pData[2] << 8 | pData[3]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_2;
+        set_joint_angle[3] = (float)((pData[4] << 8 | pData[5]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_3;
+        set_joint_angle[4] = -((float)((pData[6] << 8 | pData[7]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_4);
+        set_joint_angle[5] = (float)((pData[8] << 8 | pData[9]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_5;
+        set_joint_angle[6] = (float)((pData[10] << 8 | pData[11]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_6;
+        set_joint_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI - ANGLE_ERROR_7;
         
         for(int i = 1; i <= 7; i++)
         {
-            if(current_host_angle[i] > PI) current_host_angle[i] -= 2 * PI;
-            if(current_host_angle[i] < -PI) current_host_angle[i] += 2 * PI;
+            if(set_joint_angle[i] > PI) set_joint_angle[i] -= 2 * PI;
+            if(set_joint_angle[i] < -PI) set_joint_angle[i] += 2 * PI;
         }
-
-        if(osMutexAcquire(setJointAngleMutexHandle, 0) == osOK)
-        {
-            if (!g_relative_mode_initialized)
-            {
-                // 首次接收数据，记录初始角度作为零点
-                for(int i = 1; i <= 7; i++)
-                {
-                    g_initial_host_angle[i] = current_host_angle[i];
-                }
-                g_relative_mode_initialized = true;
-            }
-            else
-            {
-                // 已经初始化，计算 "当前角度" 与 "初始零点" 的差值
-                for(int i = 1; i <= 7; i++)
-                {
-                    float relative_angle = current_host_angle[i] - g_initial_host_angle[i];
-
-                    if (relative_angle > PI) 
-                    {
-                        relative_angle -= 2 * PI;
-                    } 
-                    else if (relative_angle < -PI) 
-                    {
-                        relative_angle += 2 * PI;
-                    }
-                    
-                    set_joint_angle[i] = relative_angle;
-                }
-            }
-            
-            osMutexRelease(setJointAngleMutexHandle);
-        }
-
-        #else
-            #error "未定义有效的 CURRENT_CONTROL_MODE !!"
-        #endif
+        osMutexRelease(setJointAngleMutexHandle);
     }
+
+    #elif (CURRENT_CONTROL_MODE == CONTROL_MODE_RELATIVE)
+
+    /************************************************/
+    /* 模式 1: 相对位置控制                            */
+    /************************************************/
+    
+    float current_host_angle[8];
+
+    current_host_angle[1] = -((float)((pData[0] << 8 | pData[1]) - 8192) / 16384 * 2 * PI) ;
+    current_host_angle[2] = (float)((pData[2] << 8 | pData[3]) - 8192) / 16384 * 2 * PI;
+    current_host_angle[3] = (float)((pData[4] << 8 | pData[5]) - 8192) / 16384 * 2 * PI;
+    current_host_angle[4] = -((float)((pData[6] << 8 | pData[7]) - 8192) / 16384 * 2 * PI);
+    current_host_angle[5] = (float)((pData[8] << 8 | pData[9]) - 8192) / 16384 * 2 * PI;
+    current_host_angle[6] = (float)((pData[10] << 8 | pData[11]) - 8192) / 16384 * 2 * PI;
+    current_host_angle[7] = (float)((pData[12] << 8 | pData[13]) - 8192) / 16384 * 2 * PI;
+
+    
+    for(int i = 1; i <= 7; i++)
+    {
+        if(current_host_angle[i] > PI) current_host_angle[i] -= 2 * PI;
+        if(current_host_angle[i] < -PI) current_host_angle[i] += 2 * PI;
+    }
+
+    if(osMutexAcquire(setJointAngleMutexHandle, 0) == osOK)
+    {
+        if (!g_relative_mode_initialized)
+        {
+            // 首次接收数据，记录初始角度作为零点
+            for(int i = 1; i <= 7; i++)
+            {
+                g_initial_host_angle[i] = current_host_angle[i];
+            }
+            g_relative_mode_initialized = true;
+        }
+        else
+        {
+            // 已经初始化，计算 "当前角度" 与 "初始零点" 的差值
+            for(int i = 1; i <= 7; i++)
+            {
+                float relative_angle = current_host_angle[i] - g_initial_host_angle[i];
+
+                if (relative_angle > PI) 
+                {
+                    relative_angle -= 2 * PI;
+                } 
+                else if (relative_angle < -PI) 
+                {
+                    relative_angle += 2 * PI;
+                }
+                
+                set_joint_angle[i] = relative_angle;
+            }
+        }
+        
+        osMutexRelease(setJointAngleMutexHandle);
+    }
+
+    #else
+        #error "未定义有效的 CURRENT_CONTROL_MODE !!"
+    #endif
+    
 }
